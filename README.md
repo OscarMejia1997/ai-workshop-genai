@@ -947,7 +947,7 @@ Generated: ...\src\litellm_config.yaml
 Validar que el YAML no contiene secretos:
 
 ```powershell
-Get-Content .\src\litellm_config.yaml
+cat .\src\litellm_config.yaml
 ```
 
 Debe verse asi:
@@ -965,10 +965,7 @@ No debe mostrar la API key ni el OCID real.
 Terminal 1:
 
 ```powershell
-cd C:\workshops\oci-genai-two-projects\oci-genai-litellm
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-.\.venv\Scripts\Activate.ps1
-litellm --config .\src\litellm_config.yaml --port 4000
+litellm --config litellm_config.yaml --port 4000
 ```
 
 Esperado:
@@ -985,9 +982,8 @@ Set models:
 Terminal 2:
 
 ```powershell
-cd C:\workshops\oci-genai-two-projects\oci-genai-litellm
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-.\.venv\Scripts\Activate.ps1
+cd ~/workshop/ai-workshop-genai/oci-genai-litellm
+source .venv/bin/activate
 ```
 
 Gemini:
