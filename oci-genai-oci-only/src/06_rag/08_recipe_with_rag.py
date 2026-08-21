@@ -22,94 +22,79 @@ from config import (
     external_validation_path,
 )
 
-from pharmacy_decision_schema import (
-    PharmacyFulfillmentDecision,
-)
+from pharmacy_decision_schema import PharmacyFulfillmentDecision
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description=(
-            "Generate a pharmacy fulfillment decision "
-            "using extraction, CIMA and RAG."
-        )
-    )
-
-    parser.add_argument(
-        "recipe",
-        help="Recipe image filename.",
-    )
-
-    parser.add_argument(
-        "model",
-        nargs="?",
-        default=None,
-        help="Optional model alias.",
-    )
-
-    return parser.parse_args()
-
-
-def load_json(path: Path) -> dict:
+def load_json(path):
     if not path.exists():
-        raise FileNotFoundError(
-            f"Required file not found: {path}"
-        )
+        raise FileNotFoundError(f"Required file not found: {path}")
 
-    return json.loads(
-        path.read_text(
-            encoding="utf-8"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def item_is_complete(item):
+    return all([
+        item.medication,
+        item.concentration,
+        item.pharmaceutical_form,
+        item.quantity,
+    ])
+
+
+def normalize_status(decision):
+    """
+    Minimal business guardrail.
+
+    If every order item contains the four fields needed by
+    Pharmacy, external corroboration issues do not block
+    fulfillment.
+    """
+
+    complete_order = (
+        bool(decision.order_items)
+        and all(
+            item_is_complete(item)
+            for item in decision.order_items
         )
     )
 
+    if complete_order:
+        decision.non_blocking_issues.extend(
+            decision.blocking_issues
+        )
 
-def normalize_status(
-    decision: PharmacyFulfillmentDecision,
-) -> PharmacyFulfillmentDecision:
-    """
-    Minimal consistency guardrail.
+        decision.blocking_issues = []
+        decision.status = "READY_FOR_PHARMACY"
 
-    The RAG + LLM decides the issues.
-    Python only keeps the final status consistent
-    with the structured result.
-    """
-
-    if decision.blocking_issues:
+    elif decision.blocking_issues:
         if decision.status == "READY_FOR_PHARMACY":
             decision.status = "PHARMACY_REVIEW"
-
-    else:
-        if decision.status == "PHARMACY_REVIEW":
-            decision.status = "READY_FOR_PHARMACY"
 
     return decision
 
 
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("recipe")
+    parser.add_argument("model", nargs="?", default=None)
+
+    args = parser.parse_args()
 
     model_alias = validate_model_alias(
         args.model or DEFAULT_MODEL
     )
 
-    model = resolve_model(
-        model_alias
-    )
+    model = resolve_model(model_alias)
 
-    image_path = recipe_image_path(
-        args.recipe
-    )
+    image_path = recipe_image_path(args.recipe)
 
     recipe = load_json(
-        extracted_path(
-            image_path
-        )
+        extracted_path(image_path)
     )
 
     external_validation = load_json(
-        external_validation_path(
-            image_path
-        )
+        external_validation_path(image_path)
     )
 
     prompt = f"""
@@ -118,8 +103,8 @@ una orden de atención para Farmacia.
 
 Tu objetivo NO es realizar una auditoría clínica.
 
-Determina si existe información suficiente para que Farmacia
-pueda identificar:
+Determina si la receta contiene información suficiente para
+identificar:
 
 - medicamento;
 - concentración;
@@ -128,29 +113,26 @@ pueda identificar:
 
 Utiliza:
 
-1. la extracción de la receta como fuente primaria;
-2. CIMA como fuente externa de corroboración;
-3. las políticas institucionales recuperadas mediante File Search.
+1. La receta extraída como fuente primaria.
+2. CIMA únicamente como fuente externa de corroboración.
+3. Las políticas institucionales recuperadas mediante File Search.
 
 REGLAS:
 
-- No inventes datos.
-- No inventes cantidades.
+- No inventes información.
 - No calcules cantidades usando dosis, frecuencia o duración.
-- No corrijas automáticamente la receta usando CIMA.
+- No corrijas automáticamente la receta utilizando CIMA.
 - NOT_CONFIRMED no bloquea automáticamente.
 - AMBIGUOUS no bloquea automáticamente.
 - API_ERROR no bloquea automáticamente.
-- Una discrepancia externa solo debe ser blocking_issue cuando,
-  junto con la receta, impide identificar qué producto o cantidad
-  debe atender Farmacia.
-- Si una discrepancia no impide generar la orden, regístrala como
-  non_blocking_issue.
-- La ausencia de dosis, frecuencia, duración o instrucciones no
-  bloquea por sí sola una orden cuando medicamento, concentración,
-  presentación y cantidad son suficientes.
-- Conserva en policy y sources las políticas institucionales
-  utilizadas.
+- Una discrepancia con CIMA no debe bloquear si la propia
+  receta contiene medicamento, concentración, presentación
+  y cantidad suficientes para preparar la orden.
+- Las discrepancias externas que no bloquean deben registrarse
+  como non_blocking_issues.
+- La falta de dosis, frecuencia, duración o instrucciones no
+  bloquea por sí sola la orden de Farmacia.
+- Conserva las políticas utilizadas en policy y sources.
 
 Estados permitidos:
 
@@ -158,12 +140,8 @@ READY_FOR_PHARMACY
 PHARMACY_REVIEW
 INSUFFICIENT_INFORMATION
 
-Devuelve exclusivamente PharmacyFulfillmentDecision.
 
-
-============================================================
-EXTRACCIÓN DE LA RECETA
-============================================================
+EXTRACCIÓN DE LA RECETA:
 
 {json.dumps(
     recipe,
@@ -171,9 +149,8 @@ EXTRACCIÓN DE LA RECETA
     ensure_ascii=False,
 )}
 
-============================================================
-VALIDACIÓN EXTERNA CIMA
-============================================================
+
+VALIDACIÓN EXTERNA CIMA:
 
 {json.dumps(
     external_validation,
@@ -184,9 +161,7 @@ VALIDACIÓN EXTERNA CIMA
 
     response = client.responses.parse(
         model=model,
-
         input=prompt,
-
         tools=[
             {
                 "type": "file_search",
@@ -196,16 +171,11 @@ VALIDACIÓN EXTERNA CIMA
                 "max_num_results": 5,
             }
         ],
-
-        text_format=(
-            PharmacyFulfillmentDecision
-        ),
+        text_format=PharmacyFulfillmentDecision,
     )
 
-    decision = response.output_parsed
-
     decision = normalize_status(
-        decision
+        response.output_parsed
     )
 
     print(
