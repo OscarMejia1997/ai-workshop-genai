@@ -1,31 +1,81 @@
-import sys
 from pathlib import Path
 
-SRC_DIR = Path(__file__).resolve().parents[1]
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
+from config import (
+    MODELS,
+    REGION,
+)
 
-import json
-from pathlib import Path
 
-from config import BASE_URL, MODEL_ALIASES
+# ============================================================
+# Output file
+# ============================================================
 
-OUTPUT = Path(__file__).resolve().parent / "litellm_config.yaml"
+OUTPUT_FILE = (
+    Path(__file__).resolve().parent
+    / "litellm_config.yaml"
+)
 
-lines = ["model_list:"]
-for alias, model_id in MODEL_ALIASES.items():
-    lines.extend([
-        f"  - model_name: {alias}",
-        "    litellm_params:",
-        f"      model: openai/{model_id}",
-        f"      api_base: {BASE_URL}",
-        "      api_key: os.environ/OCI_GENAI_API_KEY",
-        "      extra_headers:",
-        "        OpenAI-Project: os.environ/OCI_GENAI_PROJECT_ID",
-        "",
-    ])
 
-OUTPUT.write_text("\n".join(lines), encoding="utf-8")
-print(f"Generated: {OUTPUT}")
-for alias in MODEL_ALIASES:
-    print(f"  - {alias}")
+# ============================================================
+# OCI OpenAI-compatible endpoint
+# ============================================================
+
+OCI_BASE_URL = (
+    f"https://inference.generativeai."
+    f"{REGION}.oci.oraclecloud.com/openai/v1"
+)
+
+
+# ============================================================
+# Generate LiteLLM configuration
+# ============================================================
+
+lines = [
+    "model_list:",
+]
+
+
+for alias, model_id in MODELS.items():
+
+    lines.extend(
+        [
+            f"  - model_name: {alias}",
+            "    litellm_params:",
+            f"      model: openai/{model_id}",
+            f"      api_base: {OCI_BASE_URL}",
+            "      api_key: os.environ/OCI_GENAI_API_KEY",
+            "      extra_headers:",
+            "        OpenAI-Project: "
+            "os.environ/OCI_GENAI_PROJECT_ID",
+            "",
+        ]
+    )
+
+
+yaml_content = "\n".join(
+    lines
+)
+
+
+# ============================================================
+# Write configuration
+# ============================================================
+
+OUTPUT_FILE.write_text(
+    yaml_content,
+    encoding="utf-8",
+)
+
+
+# ============================================================
+# Result
+# ============================================================
+
+print(
+    f"Generated: {OUTPUT_FILE}"
+)
+
+for alias in MODELS:
+    print(
+        f"  - {alias}"
+    )

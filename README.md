@@ -685,6 +685,7 @@ cd C:\workshops\oci-genai-two-projects\oci-genai-oci-only
 ## 7. Crear entorno Python
 
 ```
+  deactivate
   python3.12 -m venv .venv
   source .venv/bin/activate 
   python -m pip install -r requirements.txt
@@ -889,18 +890,17 @@ cd C:\workshops\oci-genai-two-projects\oci-genai-litellm
 
 ## 15. Crear entorno Python
 
-```powershell
-python -m venv .venv
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+```deactivate
+  python3.12 -m venv .venv
+  source .venv/bin/activate 
+  python -m pip install -r requirements.txt
 ```
 
 Validar:
 
-```powershell
-python -c "import sys; print(sys.executable)"
-Get-Command litellm | Select-Object Source
+```
+  which python
+  which litellm
 ```
 
 Ambos deben apuntar a `oci-genai-litellm\.venv`.
