@@ -1,0 +1,65 @@
+{
+  "document_type": "RECETA ÚNICA ESTANDARIZADA",
+  "recipe_id": "47755643",
+  "issue_date": "02/08/2024",
+  "patient": "Panilo Simeon Avalos",
+  "diagnosis": "Dolor Abdominal",
+  "medications": [
+    {
+      "name": "Hiosina",
+      "concentration": "20mg/ml",
+      "pharmaceutical_form": "Amp.",
+      "dose_per_administration": null,
+      "frequency": null,
+      "duration": null,
+      "prescribed_quantity": "02",
+      "instructions": null
+    },
+    {
+      "name": "Ranitidina",
+      "concentration": "10mg/ml",
+      "pharmaceutical_form": "Amp.",
+      "dose_per_administration": null,
+      "frequency": null,
+      "duration": null,
+      "prescribed_quantity": "02",
+      "instructions": null
+    },
+    {
+      "name": "Dimenhidrinato",
+      "concentration": "5ml",
+      "pharmaceutical_form": "Amp.",
+      "dose_per_administration": null,
+      "frequency": null,
+      "duration": null,
+      "prescribed_quantity": "02",
+      "instructions": null
+    },
+    {
+      "name": "Jeringa",
+      "concentration": null,
+      "pharmaceutical_form": null,
+      "dose_per_administration": null,
+      "frequency": null,
+      "duration": null,
+      "prescribed_quantity": "01",
+      "instructions": null
+    }
+  ],
+  "physician": {
+    "name": "Velasquez Camones Gloria R",
+    "license_number": null,
+    "specialty": "TEC. ENFERMERIA"
+  },
+  "missing_fields": [
+    "medications.dose_per_administration",
+    "medications.frequency",
+    "medications.duration",
+    "medications.instructions",
+    "physician.license_number"
+  ],
+  "ambiguous_fields": [],
+  "extraction_issues": [],
+  "requires_human_review": false,
+  "review_reasons": []
+}
