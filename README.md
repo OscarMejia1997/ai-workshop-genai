@@ -628,7 +628,7 @@ Cada proyecto debe tener su propio archivo `.env`.
 Si existe `.env.example`, copiarlo:
 
 ```powershell
-Copy-Item .env.example .env
+cp .env.example .env
 ```
 
 Si no existe, crear `.env` con esta plantilla:
@@ -684,23 +684,10 @@ cd C:\workshops\oci-genai-two-projects\oci-genai-oci-only
 
 ## 7. Crear entorno Python
 
-```powershell
-python -m venv .venv
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
 ```
-
-Validar que el Python pertenece al proyecto:
-
-```powershell
-python -c "import sys; print(sys.executable)"
-```
-
-Debe apuntar a:
-
-```text
-...\oci-genai-oci-only\.venv\Scripts\python.exe
+  python3.12 -m venv .venv
+  source .venv/bin/activate 
+  python -m pip install -r requirements.txt
 ```
 
 ## 8. Validar configuracion
